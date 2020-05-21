@@ -46,3 +46,10 @@ tags = {
    "Terraform"  =  "true"
     }
 }
+
+resource "aws_eip" "prod-eip" {
+  instance =  aws_instance.prod-web.id
+tags = {
+  "Terraform"  =  "true"
+  }
+}
