@@ -1,3 +1,37 @@
+variable "whitelist"{
+  type  =  list(string)
+ }            
+
+variable "web_image_id"{
+  type  =  string
+}          
+
+variable "web_instance_type"{
+  type  =  string
+}     
+
+variable "web_max_size"{
+  type  =  number
+}         
+
+variable "web_min_size"{
+  type  =  number
+}          
+
+variable "web_desired_capacity"{
+  type  =  number
+}  
+
+
+
+
+
+
+
+
+
+
+
 provider "aws"{
   profile  =  "default"
   region   =  "us-west-2"
@@ -17,7 +51,7 @@ resource "aws_security_group" "prod-security-group"{
     from_port     =  40
     to_port       =  40
     protocol      =  "tcp"
-    cidr_blocks   =  ["0.0.0.0/0"]
+    cidr_blocks   =  var.whitelist 
      
   }
 
@@ -25,14 +59,14 @@ resource "aws_security_group" "prod-security-group"{
     from_port    =  443
     to_port      =  443
     protocol     =  "tcp"
-    cidr_blocks  =  ["0.0.0.0/0"]
+    cidr_blocks  =  var.whitelist 
   }
 
   egress{
     from_port    =  0
     to_port      =  0
     protocol     =  "-1"
-    cidr_blocks  =  ["0.0.0.0/0"]
+    cidr_blocks  =  var.whitelist 
   }  
 }
 
@@ -93,16 +127,18 @@ resource "aws_elb" "prod_web"{
 
 resource "aws_launch_template" "prod-launch-template"{
   name_prefix   =  "prod-launch-template"
-  image_id      = "ami-0813245c0939ab3ca"
-  instance_type = "t2.micro"
+  image_id      = var.web_image_id
+  instance_type = var.web_instance_type
 }
 
 
 resource "aws_autoscaling_group" "prod-asg"{
   
-  availability_zones         =  ["us-west-2a","us-west-2b"]
-  max_size                  = 2
-  min_size                  = 1
+  availability_zones        =  ["us-west-2a","us-west-2b"]
+  desired_capacity          = var.web_desired_capacity
+
+  max_size                  = var.web_max_size
+  min_size                  = var.web_min_size
 
   vpc_zone_identifier       =  [aws_default_subnet.prod_default_subnet_az1.id , aws_default_subnet.prod_default_subnet_az2.id]
   launch_template{
@@ -116,4 +152,20 @@ resource "aws_autoscaling_attachment" "asg_attachment" {
   autoscaling_group_name = aws_autoscaling_group.prod-asg.id
   elb                    = aws_elb.prod_web.id
 }
+
+
+
+             
+          
+     
+  
+
+
+
+
+
+
+
+
+
 
