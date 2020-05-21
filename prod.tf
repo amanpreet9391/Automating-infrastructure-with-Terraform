@@ -35,3 +35,14 @@ resource "aws_security_group" "prod-security-group"{
     cidr_blocks  =  ["0.0.0.0/0"]
   }  
 }
+
+resource "aws_instance" "prod-web"{
+  ami                    =  "ami-0813245c0939ab3ca"
+  instance_type          =  "t2.micro"
+  vpc_security_group_ids =[
+  aws_security_group.prod-security-group.id
+  ]
+tags = {
+   "Terraform"  =  "true"
+    }
+}
