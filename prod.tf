@@ -60,3 +60,60 @@ tags = {
   }
 }
 
+resource "aws_default_subnet" "prod_default_subnet_az1"{
+  availability_zone  =  "us-west-2a"
+  tags={
+  "Terraform" = "true"
+  }
+}
+
+resource "aws_default_subnet" "prod_default_subnet_az2"{
+  availability_zone  =  "us-west-2b"
+  tags={
+  "Terraform" =  "true"
+  }
+}
+
+resource "aws_elb" "prod_web"{
+  name            =   "prod-web-ELB"
+  instances       =   aws_instance.prod-web.*.id
+  
+  subnets         =   [aws_default_subnet.prod_default_subnet_az1.id , aws_default_subnet.prod_default_subnet_az2.id]
+  security_groups =   [aws_security_group.prod-security-group.id ]
+
+  listener{
+  instance_port      =  80
+  instance_protocol  =  "http"
+  lb_port            =  80
+  lb_protocol        =  "http"
+  
+
+}
+}
+
+resource "aws_launch_template" "prod-launch-template"{
+  name_prefix   =  "prod-launch-template"
+  image_id      = "ami-0813245c0939ab3ca"
+  instance_type = "t2.micro"
+}
+
+
+resource "aws_autoscaling_group" "prod-asg"{
+  
+  availability_zones         =  ["us-west-2a","us-west-2b"]
+  max_size                  = 2
+  min_size                  = 1
+
+  vpc_zone_identifier       =  [aws_default_subnet.prod_default_subnet_az1.id , aws_default_subnet.prod_default_subnet_az2.id]
+  launch_template{
+  id  =  aws_launch_template.prod-launch-template.id
+
+}
+
+}
+
+resource "aws_autoscaling_attachment" "asg_attachment" {
+  autoscaling_group_name = aws_autoscaling_group.prod-asg.id
+  elb                    = aws_elb.prod_web.id
+}
+
