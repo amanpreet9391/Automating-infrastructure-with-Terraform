@@ -44,7 +44,7 @@ resource "aws_s3_bucket" "my-s3-prod-bucket"{
 
 resource "aws_default_vpc" "default" {}
 
-resource "aws_security_group" "prod-security-group"{
+resource "aws_security_group" "prod_web"{
 
   
   ingress{
@@ -70,13 +70,13 @@ resource "aws_security_group" "prod-security-group"{
   }  
 }
 
-resource "aws_instance" "prod-web"{
+resource "aws_instance" "prod_web"{
   count  =  2  
 
   ami                    =  "ami-0813245c0939ab3ca"
   instance_type          =  "t2.micro"
   vpc_security_group_ids =[
-  aws_security_group.prod-security-group.id
+  aws_security_group.prod_web.id
   ]
 tags = {
    "Terraform"  =  "true"
@@ -84,7 +84,7 @@ tags = {
 }
 
 resource "aws_eip_association" "prod_web"{
-  instance_id        =  aws_instance.prod-web[0].id
+  instance_id        =  aws_instance.prod_web[0].id
   allocation_id      =  aws_eip.prod-eip.id
 }
 
@@ -94,64 +94,50 @@ tags = {
   }
 }
 
-resource "aws_default_subnet" "prod_default_subnet_az1"{
+resource "aws_default_subnet" "prod_web_default_subnet_az1"{
   availability_zone  =  "us-west-2a"
   tags={
   "Terraform" = "true"
   }
 }
 
-resource "aws_default_subnet" "prod_default_subnet_az2"{
+resource "aws_default_subnet" "prod_web_default_subnet_az2"{
   availability_zone  =  "us-west-2b"
   tags={
   "Terraform" =  "true"
   }
 }
 
-resource "aws_elb" "prod_web"{
-  name            =   "prod-web-ELB"
-  instances       =   aws_instance.prod-web.*.id
-  
-  subnets         =   [aws_default_subnet.prod_default_subnet_az1.id , aws_default_subnet.prod_default_subnet_az2.id]
-  security_groups =   [aws_security_group.prod-security-group.id ]
-
-  listener{
-  instance_port      =  80
-  instance_protocol  =  "http"
-  lb_port            =  80
-  lb_protocol        =  "http"
-  
-
-}
-}
-
-resource "aws_launch_template" "prod-launch-template"{
-  name_prefix   =  "prod-launch-template"
-  image_id      = var.web_image_id
-  instance_type = var.web_instance_type
-}
 
 
-resource "aws_autoscaling_group" "prod-asg"{
-  
-  availability_zones        =  ["us-west-2a","us-west-2b"]
-  desired_capacity          = var.web_desired_capacity
 
-  max_size                  = var.web_max_size
-  min_size                  = var.web_min_size
+             
+          
+     
+ module "web_app"{
+     source = "./modules/web_app"
+ 
+  whitelist            =  var.whitelist
+  web_image_id         =  var.web_image_id
+  web_instance_type    =  var.web_instance_type
+  web_max_size         =  var.web_max_size
+  web_min_size         =  var.web_min_size
+  web_desired_capacity =  var.web_desired_capacity
+  security_groups      =  [aws_security_group.prod_web.id]
+  subnets              =  [aws_default_subnet.prod_web_default_subnet_az1.id , aws_default_subnet.prod_web_default_subnet_az2.id]
+  web_app              =   "prod"  
 
-  vpc_zone_identifier       =  [aws_default_subnet.prod_default_subnet_az1.id , aws_default_subnet.prod_default_subnet_az2.id]
-  launch_template{
-  id  =  aws_launch_template.prod-launch-template.id
+ }
 
-}
 
-}
 
-resource "aws_autoscaling_attachment" "asg_attachment" {
-  autoscaling_group_name = aws_autoscaling_group.prod-asg.id
-  elb                    = aws_elb.prod_web.id
-}
+
+
+
+
+
+
+
 
 
 
