@@ -1,6 +1,11 @@
 resource "aws_instance" "myec2instance" {
-    ami  =  "ami-0813245c0939ab3ca"
-    instance_type = var.instance_type
+  //  instance_name  = "ec2instance.${count.index}"
+//  instance_name    =  "ec2-instance"
+    ami            =  "ami-0813245c0939ab3ca"
+    instance_type  = var.types[var.aws_region]
+  //  count          =  3
+
+
 }
 
 resource "aws_security_group" "security_group_for_varibale_testing"{
@@ -25,3 +30,26 @@ resource "aws_security_group" "security_group_for_varibale_testing"{
   }
 
 }
+
+resource "aws_elb" "my_elb" {
+  name               = "my-terraform-elb"
+  availability_zones = var.az
+
+
+
+  listener {
+    instance_port     = 8000
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
+  }
+
+}
+
+resource "aws_iam_user" "my_iam_role" {
+    name  = "loadbalancer.${count.index}"
+    count = 2
+    path = "/system"
+}
+
+  //instances                   = aws_instance.myec2instance.id
