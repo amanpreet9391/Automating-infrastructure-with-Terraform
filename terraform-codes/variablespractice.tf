@@ -47,9 +47,9 @@ resource "aws_elb" "my_elb" {
 }
 
 resource "aws_iam_user" "my_iam_role" {
-    name  = "loadbalancer.${count.index}"
-    count = 2
-    path = "/system"
+    name  = var.elb_names[count.index]
+    count = 3
+    path = "/system/"
 }
 
   //instances                   = aws_instance.myec2instance.id

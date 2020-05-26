@@ -17,3 +17,6 @@ variable "types"{
 variable "aws_region"{
   type = string
 }
+variable "elb_names"{
+  default = ["dev-loadbalancer","stage-loadbalancer","prod-loadbalancer"]
+}
